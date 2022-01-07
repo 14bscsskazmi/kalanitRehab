@@ -1,0 +1,50 @@
+{
+  "name": "kalanitRehab",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "start": "react-native start",
+    "test": "jest",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@mediapipe/pose": "^0.5.1635988162",
+    "@react-native-async-storage/async-storage": "^1.15.14",
+    "@react-native-community/async-storage": "^1.12.1",
+    "@reduxjs/toolkit": "^1.7.1",
+    "@tensorflow-models/mobilenet": "^2.1.0",
+    "@tensorflow-models/pose-detection": "^0.0.6",
+    "@tensorflow/tfjs": "^3.12.0",
+    "@tensorflow/tfjs-backend-webgl": "^3.12.0",
+    "@tensorflow/tfjs-converter": "^3.12.0",
+    "@tensorflow/tfjs-core": "^3.12.0",
+    "@tensorflow/tfjs-react-native": "^0.8.0",
+    "expo": "^44.0.4",
+    "expo-camera": "^12.1.0",
+    "expo-gl": "^11.1.1",
+    "expo-gl-cpp": "^11.1.0",
+    "expo-permissions": "^13.1.0",
+    "install-expo-modules": "^0.2.1",
+    "jpeg-js": "^0.4.3",
+    "react": "17.0.2",
+    "react-native": "0.66.4",
+    "react-native-fs": "^2.18.0",
+    "react-redux": "^7.2.6"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.16.7",
+    "@babel/runtime": "^7.16.7",
+    "@react-native-community/eslint-config": "^3.0.1",
+    "@types/react-redux": "^7.1.21",
+    "babel-jest": "^27.4.6",
+    "eslint": "^8.6.0",
+    "jest": "^27.4.6",
+    "metro-react-native-babel-preset": "^0.66.2",
+    "react-test-renderer": "17.0.2"
+  },
+  "jest": {
+    "preset": "react-native"
+  }
+}
