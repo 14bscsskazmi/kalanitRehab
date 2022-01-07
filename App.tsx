@@ -52,7 +52,7 @@ const App = () => {
   };
   const LoadModal = async () => {
     const detector = poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, detectorConfig).then((response) => {
-      console.log('success: ', response)
+      console.log('success: ', response);
     }).catch((error) => {
       console.log('error: ', error)
     })
