@@ -1,296 +1,274 @@
-// // /**
-// //  * Sample React Native App
-// //  * https://github.com/facebook/react-native
-// //  *
-// //  * @format
-// //  * @flow strict-local
-// //  */
-
-import React, {useState} from 'react';
-// import type {Node} from 'react';
-import { cameraWithTensors, fetch, decodeJpeg, bundleResourceIO, renderToGLView } from '@tensorflow/tfjs-react-native';
+/* eslint-disable react-native/no-inline-styles */
+import React, {Component, useState, useEffect} from 'react';
 import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
   StyleSheet,
-  Text,
-  useColorScheme,
   View,
-  Image,
-  Platform
+  ActivityIndicator,
+  Text,
+  Platform,
+  Dimensions,
 } from 'react-native';
+// import AsyncStorage from '@react-native-community/async-storage';
+// import {ScaledSheet} from 'react-native-size-matters';
+import {Camera} from 'expo-camera';
+import Canvas from 'react-native-canvas';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+import * as tf from '@tensorflow/tfjs';
+import {cameraWithTensors} from '@tensorflow/tfjs-react-native';
 
-import * as poseDetection from '@tensorflow-models/pose-detection';
-import '@tensorflow/tfjs-backend-webgl';
-import * as tf from '@tensorflow/tfjs-core';
-import '@mediapipe/pose';
+import * as posenet from '@tensorflow-models/posenet';
+import * as blazeface from '@tensorflow-models/blazeface';
 
-const dp = require('./dp.png')
+const TensorCamera = cameraWithTensors(Camera);
 
-// // import * as mobilenet from '@tensorflow-models/mobilenet';
-// // import { fetch, decodeJpeg } from '@tensorflow/tfjs-react-native';
-// // import { cameraWithTensors } from '@tensorflow/tfjs-react-native';
-// // import { Camera, Constants } from 'expo-camera';
-// // import * as tf from '@tensorflow/tfjs';
 
-const App = () => {
+const CAM_WIDTH = Dimensions.get('window').width;
+const CAM_HEIGHT = Dimensions.get('window').height;
+const inputTensorWidth = 152;
+const inputTensorHeight = 200;
+const AUTORENDER = true;
 
-  const model = poseDetection.SupportedModels.MoveNet;
-  const detectorConfig = {
-    modelType: poseDetection.movenet.modelType.MULTIPOSE_LIGHTNING,
-    enableTracking: true,
-    trackerType: poseDetection.TrackerType.BoundingBox  
+export default function CameraScreen() {
+  // const [hasPermission, setHasPermission] = useState(null);
+  // const [type, setType] = useState(Camera.Constants.Type.back);
+  const [isLoaded, setLoaded] = React.useState(false);
+  const [modal, setModal] = React.useState();
+  const [singlePose, setSinglePose] = React.useState();
+  const [ctx, setCanvasContext] = useState(null);
+
+  const [textureDims, setTextureDims] = useState({});
+  const handleCanvas = canvas => {
+    if (canvas === null) {
+      return;
+    }
+    const context = canvas.getContext('2d');
+    setCanvasContext(context);
   };
-  const LoadModal = async () => {
-    const detector = poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, detectorConfig).then((response) => {
-      console.log('success: ', response);
-    }).catch((error) => {
-      console.log('error: ', error)
-    })
-    // // Load an image as a Uint8Array
-    // const imageUri = dp;
-    // const response = await fetch(imageUri, {}, { isBinary: true });
-    // const imageDataArrayBuffer = await response.arrayBuffer();
-    // const imageData = new Uint8Array(imageDataArrayBuffer);
-
-    // // Decode image data to a tensor
-    // const imageTensor = decodeJpeg(imageData);
-
-    // const poses = await detector.estimatePoses(imageTensor);
-    // console.log(poses);
+  const drawPoint = (x, y) => {
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, 2 * Math.PI);
+    ctx.fillStyle = '#10f400';
+    ctx.fill();
+    ctx.closePath();
   };
-  
 
-  const Section = () => {
-    LoadModal();
+  const drawSegment = (x1, y1, x2, y2) => {
+    console.log(`${x1}, ${y1}, ${x2}, ${y2}`);
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#00ff30';
+    ctx.stroke();
+    ctx.closePath();
+  };
+
+  const drawSkeleton = pose => {
+    console.log(pose);
+    const minPartConfidence = 0.1;
+    for (var i = 0; i < pose.keypoints.length; i++) {
+      const keypoint = pose.keypoints[i];
+      if (keypoint.score < minPartConfidence) {
+        continue;
+      }
+      console.log(keypoint);
+      drawPoint(keypoint.position.x, keypoint.position.y);
+    }
+    const adjacentKeyPoints = posenet.getAdjacentKeyPoints(
+      pose.keypoints,
+      minPartConfidence,
+    );
+    adjacentKeyPoints.forEach(keypoints => {
+      drawSegment(
+        keypoints[0].position.x,
+        keypoints[0].position.y,
+        keypoints[1].position.x,
+        keypoints[1].position.y,
+      );
+    });
+  };
+  useEffect(() => {
+    let isMounted = true;
+    if (Platform.OS === 'ios') {
+      setTextureDims({height: CAM_HEIGHT, width: CAM_WIDTH});
+    } else {
+      setTextureDims({height: CAM_HEIGHT, width: CAM_WIDTH});
+    }
+
+    (async () => {
+      //console.log('here...')
+      
+      await tf.ready().then(tf => {
+        setLoaded(true);
+        loadBlazefaceModel();
+        loadPosenetModel();
+      });
+      // await tf.setbackend()
+    })();
+
+    const loadPosenetModel = async () => {
+      const model = await posenet.load({
+        architecture: 'MobileNetV1',
+        outputStride: 16,
+        inputResolution: {width: inputTensorWidth, height: inputTensorHeight},
+        multiplier: 0.75,
+        quantBytes: 2,
+      });
+      // console.log('loadPosenetModel....model', model);
+      setModal(model);
+      return model;
+    };
+
+    const loadBlazefaceModel = async () => {
+      const model = await blazeface.load();
+      return model;
+    };
+
+    // await tf.ready().then((tf) => {
+    //     console.log('tf...', tf)
+    //     if (isMounted) {
+    //         setLoaded(true);
+    //     }
+    // });
+    // (async () => {
+    //   const { status } = await Camera.requestPermissionsAsync();
+    //   setHasPermission(status === 'granted');
+    // })();
+  }, []);
+  //   if (hasPermission === null) {
+  //     return <View />;
+  //   }
+  //   if (hasPermission === false) {
+  //     return <Text>No access to camera</Text>;
+  //   }
+
+  const handleImageTensorReady = (images, updateCameraPreview, gl) => {
+    const loop = async () => {
+      const modelName = 'posenet';
+
+      if (modelName === 'posenet') {
+        if (modal != null) {
+          const imageTensor = images.next().value;
+          const flipHorizontal = Platform.OS === 'ios' ? false : true;
+          const pose = await modal.estimateSinglePose(imageTensor, {
+            flipHorizontal,
+          });
+          console.log('images: ', pose);
+          setSinglePose({pose});
+          // handleCanvas();
+          // const context = ctx.getContext('2d');
+
+          ctx.clearRect(0, 0, CAM_WIDTH, CAM_HEIGHT);
+          await drawSkeleton(pose);
+          tf.dispose([imageTensor]);
+        }
+      } else {
+        //
+      }
+
+      if (!AUTORENDER) {
+        gl.endFrameEXP();
+      }
+      requestAnimationFrame(loop);
+    };
+
+    loop();
+    // }
+  };
+
+  const camView = () => {
+    // console.log('textureDims.height: ', textureDims.width);
     return (
-      <View>
-        {/* <TensorCamera
-          style={styles.camera}
-          // type={Camera.Constants.Type.back}
-          // zoom={0}
-          cameraTextureHeight={textureDims.height}
-          cameraTextureWidth={textureDims.width}
-          resizeHeight={tensorDims.height}
-          resizeWidth={tensorDims.width}
-          // resizeDepth={3}
-          // onReady={(imageAsTensors) => {}}
-          // autorender={true}
-        /> */}
-      </View>
+      <TensorCamera
+        // Standard Camera props
+        style={styles.camera}
+        type={Camera.Constants.Type.back}
+        zoom={0}
+        // tensor related props
+        cameraTextureHeight={textureDims.height}
+        cameraTextureWidth={textureDims.width}
+        resizeHeight={inputTensorHeight}
+        resizeWidth={inputTensorWidth}
+        resizeDepth={3}
+        onReady={handleImageTensorReady}
+        autorender={true}
+      />
     );
   };
 
-  return (
-    <SafeAreaView>
-      
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-      >
-        <Header />
-        <Section />
-      </ScrollView>
-    </SafeAreaView>
-  );
-};
+  if (!isLoaded) {
+    return (
+      <View style={styles.container}>
+        <View style={{flexDirection: 'row'}}>
+          <Text style={styles.text}>Loading Tensor Flow</Text>
+          <ActivityIndicator />
+        </View>
+      </View>
+    );
+  } else {
+    return (
+      <View style={styles.camera}>
+        {camView()}
+        <Canvas ref={handleCanvas} style={styles.canvas} />
+        {/* <Camera style={styles.camera} type={type}>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={() => {
+                  setType(
+                    type === Camera.Constants.Type.back
+                      ? Camera.Constants.Type.front
+                      : Camera.Constants.Type.back
+                  );
+                }}>
+                <Text style={styles.text}> Flip </Text>
+              </TouchableOpacity>
+            </View>
+          </Camera> */}
+      </View>
+    );
+  }
+}
 
-// // const styles = StyleSheet.create({
-// //   sectionContainer: {
-// //     marginTop: 32,
-// //     paddingHorizontal: 24,
-// //   },
-// //   sectionTitle: {
-// //     fontSize: 24,
-// //     fontWeight: '600',
-// //   },
-// //   sectionDescription: {
-// //     marginTop: 8,
-// //     fontSize: 18,
-// //     fontWeight: '400',
-// //   },
-// //   highlight: {
-// //     fontWeight: '700',
-// //   },
-// //   camera: {
-// //     position: 'absolute',
-// //     left: 50,
-// //     top: 100,
-// //     width: 600 / 2,
-// //     height: 800 / 2,
-// //     zIndex: 1,
-// //     borderWidth: 1,
-// //     borderColor: 'black',
-// //     borderRadius: 0,
-// //   },
-// // });
-
-export default App;
-
-
-
-
-
-
-
-
-
-
-
-// import React, { Component } from 'react';
-// import { Camera } from 'expo-camera';
-
-// import { View, Text, StyleSheet, Platform } from 'react-native'
-// // import { CameraStyle } from './styles'
-// import * as tf from '@tensorflow/tfjs';
-
-// const TensorCamera = cameraWithTensors(Camera);
-
-// class CameraTester2 extends Component {
-
-//   constructor(props) {
-//     super(props)
-//   }
-
-//   async componentDidMount() {
-//     // await tf.ready()
-//     console.log("TF Ready")
-//   }
-
-//   handleCameraStream(images, updatePreview, gl) {
-//     const loop = async () => {
-//         requestAnimationFrame(loop);
-//     }
-//     loop();
-//   }
-
-//   render() {
-
-//     let textureDims;
-//     if (Platform.OS === 'ios') {
-//       textureDims = {
-//         height: 1920,
-//         width: 1080,
-//       };
-//     } else {
-//       textureDims = {
-//         height: 1200,
-//         width: 1600,
-//       };
-//     }
-//     function handleCameraStreamV2(image) {
-//       const loop = async () => {
-//         if (!hpmReady && !tfReady) {
-//           tf.device_util.isMobile = () => true;
-//           tf.device_util.isBrowser = () => false;
-//           await tf.ready();
-//           setTfReady(true);
-//           //https://github.com/tensorflow/tfjs/issues/4098
-//           await tf.setBackend('cpu');
-//           console.log(tf.getBackend());
-//           const model = await handpose.load();
-//           console.log(model)
-//           setHandposeModel(model)
-//           setHpmReady(true)
-//         }
-        
-//         if (handposeModel){
-//           const imageAsTensors = await image.next().value;
-//           console.log(imageAsTensors)
-//           if (imageAsTensors){
-//             const prediction = await handposeModel.estimateHands(imageAsTensors);
-//             console.log(prediction);
-//             if (prediction && prediction.length > 0) { 
-//               const GE = new fp.GestureEstimator([fp.Gestures.ThumbsUpGesture]);
-//               GE.estimate(prediction[0].landmarks, 4)
-//                 .then(gesture => {
-//                   console.log("Gesture: ", gesture);
-//                   if (gesture.gestures !== undefined && gesture.gestures.length > 0) {  
-//                     const confidence = gesture.gestures.map(
-//                       (prediction) => prediction.confidence
-//                     );
-//                     const mxConfidence = confidence.indexOf(
-//                       Math.max.apply(null, confidence)
-//                     );
-//                       console.log(''')
-//                     // setEmoji(gesture.gestures[mxConfidence].name);
-//                     console.log("emoji: ",emoji);
-//                   }
-//                 })
-//                 .catch(e => {
-//                   console.error("Prediction error", e.message, e.stack);
-//                 })      
-//             }
-//             //console.log('Looping...')
-//             //requestAnimationFrameId = requestAnimationFrame(loop);
-//           }        
-//         }      
-//       }
-//       loop();
-//     }
-
-//     return <View>
-//       <TensorCamera
-//         // Standard Camera props
-//         style={styles.camera}
-//         type={Camera.Constants.Type.front}
-//         // Tensor related props
-//         cameraTextureHeight={textureDims.height}
-//         cameraTextureWidth={textureDims.width}
-//         resizeHeight={320}
-//         resizeWidth={320}
-//         resizeDepth={3}
-//         onReady={this.handleCameraStream}
-//         autorender={true}
-//       >
-//       </TensorCamera>
-//     </View>
-    
-
-//   }
-// }
-
-
-// const styles = StyleSheet.create({
-//     container: {
-//       flex: 1,
-//       justifyContent: 'center',
-//       alignItems: 'center'
-//     },
-//     sectionContainer: {
-//       marginTop: 32,
-//       paddingHorizontal: 24,
-//     },
-//     sectionTitle: {
-//       fontSize: 24,
-//       fontWeight: '600',
-//     },
-//     sectionDescription: {
-//       marginTop: 8,
-//       fontSize: 18,
-//       fontWeight: '400',
-//     },
-//     highlight: {
-//       fontWeight: '700',
-//     },
-//     camera: {
-//       position: 'absolute',
-//       left: 50,
-//       top: 100,
-//       width: 600 / 2,
-//       height: 800 / 2,
-//       zIndex: 1,
-//       borderWidth: 1,
-//       borderColor: 'black',
-//       borderRadius: 0,
-//     },
-//   });
-// export default CameraTester2;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  canvas: {
+    width: CAM_WIDTH,
+    height: CAM_HEIGHT,
+    zIndex: 200,
+    // borderWidth: 2,
+    // borderColor: 'red',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+  },
+  cameraContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#fff',
+  },
+  camera: {
+    flex: 1,
+  },
+  buttonContainer: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    flexDirection: 'row',
+    margin: 20,
+  },
+  button: {
+    flex: 0.1,
+    alignSelf: 'flex-end',
+    alignItems: 'center',
+  },
+  text: {
+    fontSize: 18,
+    color: 'white',
+  },
+});
