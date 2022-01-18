@@ -24,8 +24,8 @@ const TensorCamera = cameraWithTensors(Camera);
 
 const CAM_WIDTH = Dimensions.get('window').width;
 const CAM_HEIGHT = Dimensions.get('window').height;
-const inputTensorWidth = 152;
-const inputTensorHeight = 200;
+const inputTensorWidth = CAM_WIDTH;
+const inputTensorHeight = 600;
 const AUTORENDER = true;
 
 export default function CameraScreen() {
@@ -46,7 +46,7 @@ export default function CameraScreen() {
   };
   const drawPoint = (x, y) => {
     ctx.beginPath();
-    ctx.arc(x, y, 3, 0, 2 * Math.PI);
+    ctx.arc(x, y, 4, 0, 2 * Math.PI);
     ctx.fillStyle = '#10f400';
     ctx.fill();
     ctx.closePath();
@@ -65,7 +65,7 @@ export default function CameraScreen() {
 
   const drawSkeleton = pose => {
     console.log(pose);
-    const minPartConfidence = 0.1;
+    const minPartConfidence = 0.85;
     for (var i = 0; i < pose.keypoints.length; i++) {
       const keypoint = pose.keypoints[i];
       if (keypoint.score < minPartConfidence) {
@@ -108,10 +108,10 @@ export default function CameraScreen() {
 
     const loadPosenetModel = async () => {
       const model = await posenet.load({
-        architecture: 'MobileNetV1',
+        architecture: 'ResNet50',
         outputStride: 16,
         inputResolution: {width: inputTensorWidth, height: inputTensorHeight},
-        multiplier: 0.75,
+        multiplier: 1,
         quantBytes: 2,
       });
       // console.log('loadPosenetModel....model', model);
@@ -149,11 +149,11 @@ export default function CameraScreen() {
       if (modelName === 'posenet') {
         if (modal != null) {
           const imageTensor = images.next().value;
-          const flipHorizontal = Platform.OS === 'ios' ? false : true;
+          const flipHorizontal = Platform.OS === 'ios' ? true : true;
           const pose = await modal.estimateSinglePose(imageTensor, {
             flipHorizontal,
           });
-          console.log('images: ', pose);
+          // console.log('images: ', pose);
           setSinglePose({pose});
           // handleCanvas();
           // const context = ctx.getContext('2d');
@@ -183,15 +183,15 @@ export default function CameraScreen() {
         // Standard Camera props
         style={styles.camera}
         type={Camera.Constants.Type.back}
-        zoom={0}
+        // zoom={0}
         // tensor related props
-        cameraTextureHeight={textureDims.height}
-        cameraTextureWidth={textureDims.width}
-        resizeHeight={inputTensorHeight}
-        resizeWidth={inputTensorWidth}
+        cameraTextureHeight={CAM_HEIGHT}
+        cameraTextureWidth={CAM_WIDTH}
+        resizeHeight={210}
+        resizeWidth={160}
         resizeDepth={3}
         onReady={handleImageTensorReady}
-        autorender={true}
+        autorender={false}
       />
     );
   };
@@ -238,11 +238,12 @@ const styles = StyleSheet.create({
     width: CAM_WIDTH,
     height: CAM_HEIGHT,
     zIndex: 200,
-    // borderWidth: 2,
+    borderWidth: 2,
     // borderColor: 'red',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'absolute',
+    paddingTop: 20,
   },
   cameraContainer: {
     display: 'flex',
@@ -255,6 +256,7 @@ const styles = StyleSheet.create({
   },
   camera: {
     flex: 1,
+    height: CAM_HEIGHT,
   },
   buttonContainer: {
     flex: 1,
