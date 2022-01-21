@@ -2917,6 +2917,32 @@
     "safe-buffer" "5.1.2"
     "vary" "~1.1.2"
 
+"compute-cosine-similarity@^1.0.0":
+  "integrity" "sha1-KfK/Lnuu+iMcq6QFkaMcF7GaTpU="
+  "resolved" "https://registry.npmjs.org/compute-cosine-similarity/-/compute-cosine-similarity-1.0.0.tgz"
+  "version" "1.0.0"
+  dependencies:
+    "compute-dot" "^1.1.0"
+    "compute-l2norm" "^1.1.0"
+    "validate.io-array" "^1.0.5"
+    "validate.io-function" "^1.0.2"
+
+"compute-dot@^1.1.0":
+  "integrity" "sha1-AaW6LHr3O5kAKsslhFnJV2qCMtw="
+  "resolved" "https://registry.npmjs.org/compute-dot/-/compute-dot-1.1.0.tgz"
+  "version" "1.1.0"
+  dependencies:
+    "validate.io-array" "^1.0.3"
+    "validate.io-function" "^1.0.2"
+
+"compute-l2norm@^1.1.0":
+  "integrity" "sha1-vQkTHGs2yNcMaDNOF2AJpOCpiaw="
+  "resolved" "https://registry.npmjs.org/compute-l2norm/-/compute-l2norm-1.1.0.tgz"
+  "version" "1.1.0"
+  dependencies:
+    "validate.io-array" "^1.0.3"
+    "validate.io-function" "^1.0.2"
+
 "concat-map@0.0.1":
   "integrity" "sha1-2Klr13/Wjfd5OnMDajug1UBdR3s="
   "resolved" "https://registry.npmjs.org/concat-map/-/concat-map-0.0.1.tgz"
@@ -7995,6 +8021,16 @@
     "@types/istanbul-lib-coverage" "^2.0.1"
     "convert-source-map" "^1.6.0"
     "source-map" "^0.7.3"
+
+"validate.io-array@^1.0.3", "validate.io-array@^1.0.5":
+  "integrity" "sha1-W1osr9j4uFq7L4hroVPy2Tond00="
+  "resolved" "https://registry.npmjs.org/validate.io-array/-/validate.io-array-1.0.6.tgz"
+  "version" "1.0.6"
+
+"validate.io-function@^1.0.2":
+  "integrity" "sha1-NDoZgC7TsZaCaceA5VjpNBHAutc="
+  "resolved" "https://registry.npmjs.org/validate.io-function/-/validate.io-function-1.0.2.tgz"
+  "version" "1.0.2"
 
 "vary@~1.1.2":
   "integrity" "sha1-IpnwLG3tMNSllhsLn3RSShj2NPw="

@@ -12,6 +12,7 @@ import {
 // import {ScaledSheet} from 'react-native-size-matters';
 import {Camera} from 'expo-camera';
 import Canvas from 'react-native-canvas';
+const similarity = require('compute-cosine-similarity');
 
 import * as tf from '@tensorflow/tfjs';
 import {cameraWithTensors} from '@tensorflow/tfjs-react-native';
@@ -35,8 +36,18 @@ export default function CameraScreen() {
   const [modal, setModal] = React.useState();
   const [singlePose, setSinglePose] = React.useState();
   const [ctx, setCanvasContext] = useState(null);
+  const [imageData, setImageData] = useState(null);
 
   const [textureDims, setTextureDims] = useState({});
+
+  function cosineDistanceMatching(poseVector1, poseVector2) {
+    let cosineSimilarity = similarity(poseVector1, poseVector2);
+    let distance = 2 * (1 - cosineSimilarity);
+    return Math.sqrt(distance);
+  }
+  const convertToVector(){
+    
+  }
   const handleCanvas = canvas => {
     if (canvas === null) {
       return;
@@ -153,13 +164,16 @@ export default function CameraScreen() {
           const pose = await modal.estimateSinglePose(imageTensor, {
             flipHorizontal,
           });
-          // console.log('images: ', pose);
+          console.log('pose: ', pose);
           setSinglePose({pose});
           // handleCanvas();
           // const context = ctx.getContext('2d');
 
           ctx.clearRect(0, 0, CAM_WIDTH, CAM_HEIGHT);
-          await drawSkeleton(pose);
+          // await drawSkeleton(pose);
+          // setTimeout(() => {
+            
+          // }, 20000);
           tf.dispose([imageTensor]);
         }
       } else {
@@ -177,7 +191,6 @@ export default function CameraScreen() {
   };
 
   const camView = () => {
-    // console.log('textureDims.height: ', textureDims.width);
     return (
       <TensorCamera
         // Standard Camera props
@@ -210,21 +223,6 @@ export default function CameraScreen() {
       <View style={styles.camera}>
         {camView()}
         <Canvas ref={handleCanvas} style={styles.canvas} />
-        {/* <Camera style={styles.camera} type={type}>
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={styles.button}
-                onPress={() => {
-                  setType(
-                    type === Camera.Constants.Type.back
-                      ? Camera.Constants.Type.front
-                      : Camera.Constants.Type.back
-                  );
-                }}>
-                <Text style={styles.text}> Flip </Text>
-              </TouchableOpacity>
-            </View>
-          </Camera> */}
       </View>
     );
   }
