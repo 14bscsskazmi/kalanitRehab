@@ -15,7 +15,7 @@ import Canvas from 'react-native-canvas';
 const similarity = require('compute-cosine-similarity');
 
 import * as tf from '@tensorflow/tfjs';
-import {cameraWithTensors} from '@tensorflow/tfjs-react-native';
+import {cameraWithTensors, decodeJpeg} from '@tensorflow/tfjs-react-native';
 
 import * as posenet from '@tensorflow-models/posenet';
 import * as blazeface from '@tensorflow-models/blazeface';
@@ -134,24 +134,7 @@ export default function CameraScreen() {
       const model = await blazeface.load();
       return model;
     };
-
-    // await tf.ready().then((tf) => {
-    //     console.log('tf...', tf)
-    //     if (isMounted) {
-    //         setLoaded(true);
-    //     }
-    // });
-    // (async () => {
-    //   const { status } = await Camera.requestPermissionsAsync();
-    //   setHasPermission(status === 'granted');
-    // })();
   }, []);
-  //   if (hasPermission === null) {
-  //     return <View />;
-  //   }
-  //   if (hasPermission === false) {
-  //     return <Text>No access to camera</Text>;
-  //   }
 
   const handleImageTensorReady = (images, updateCameraPreview, gl) => {
     const loop = async () => {
@@ -159,22 +142,33 @@ export default function CameraScreen() {
 
       if (modelName === 'posenet') {
         if (modal != null) {
-          const imageTensor = images.next().value;
-          const flipHorizontal = Platform.OS === 'ios' ? true : true;
-          const pose = await modal.estimateSinglePose(imageTensor, {
-            flipHorizontal,
-          });
-          console.log('pose: ', pose);
-          setSinglePose({pose});
-          // handleCanvas();
-          // const context = ctx.getContext('2d');
+          // Load an image as a Uint8Array
+          const imageUri = 'https://en.wikipedia.org/wiki/Waqar_Zaka#/media/File:Waqar_Zaka.jpg';
+          const response = await fetch(imageUri, {}, {isBinary: true});
+          const imageDataArrayBuffer = await response.arrayBuffer();
+          const imageData = new Uint8Array(imageDataArrayBuffer);
 
-          ctx.clearRect(0, 0, CAM_WIDTH, CAM_HEIGHT);
+          // Decode image data to a tensor
+          const imageTensor = decodeJpeg(imageData);
+          console.log('image tensor: ', imageTensor);
+          
+
+          // const imageTensor = images.next().value;
+          // const flipHorizontal = Platform.OS === 'ios' ? true : true;
+          // const pose = await modal.estimateSinglePose(imageTensor, {
+          //   flipHorizontal,
+          // });
+          // console.log('pose: ', pose);
+          // setSinglePose({pose});
+          // // handleCanvas();
+          // // const context = ctx.getContext('2d');
+
+          // ctx.clearRect(0, 0, CAM_WIDTH, CAM_HEIGHT);
           // await drawSkeleton(pose);
-          // setTimeout(() => {
+          // // setTimeout(() => {
             
-          // }, 20000);
-          tf.dispose([imageTensor]);
+          // // }, 20000);
+          // tf.dispose([imageTensor]);
         }
       } else {
         //
