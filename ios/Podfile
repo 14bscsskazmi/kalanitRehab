@@ -7,6 +7,11 @@ platform :ios, '12.0'
 target 'kalanitRehab' do
   use_expo_modules!
   # post_integrate do |installer|
+    begin
+      expo_patch_react_imports!(installer)
+    rescue => e
+      Pod::UI.warn e
+    end
   #   expo_patch_react_imports!(installer)
   # end
   config = use_native_modules!

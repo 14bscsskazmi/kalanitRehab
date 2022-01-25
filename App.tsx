@@ -8,14 +8,15 @@ import {
   Platform,
   Dimensions,
 } from 'react-native';
+const similarity = require('compute-cosine-similarity');
+const simplePose = require('./simple-pose.png');
 // import AsyncStorage from '@react-native-community/async-storage';
 // import {ScaledSheet} from 'react-native-size-matters';
 import {Camera} from 'expo-camera';
 import Canvas from 'react-native-canvas';
-const similarity = require('compute-cosine-similarity');
 
 import * as tf from '@tensorflow/tfjs';
-import {cameraWithTensors, decodeJpeg} from '@tensorflow/tfjs-react-native';
+import {cameraWithTensors, decodeJpeg, fetch} from '@tensorflow/tfjs-react-native';
 
 import * as posenet from '@tensorflow-models/posenet';
 import * as blazeface from '@tensorflow-models/blazeface';
@@ -36,18 +37,8 @@ export default function CameraScreen() {
   const [modal, setModal] = React.useState();
   const [singlePose, setSinglePose] = React.useState();
   const [ctx, setCanvasContext] = useState(null);
-  const [imageData, setImageData] = useState(null);
 
   const [textureDims, setTextureDims] = useState({});
-
-  function cosineDistanceMatching(poseVector1, poseVector2) {
-    let cosineSimilarity = similarity(poseVector1, poseVector2);
-    let distance = 2 * (1 - cosineSimilarity);
-    return Math.sqrt(distance);
-  }
-  const convertToVector(){
-    
-  }
   const handleCanvas = canvas => {
     if (canvas === null) {
       return;
@@ -110,8 +101,8 @@ export default function CameraScreen() {
       //console.log('here...')
       
       await tf.ready().then(tf => {
-        setLoaded(true);
-        loadBlazefaceModel();
+       
+        // loadBlazefaceModel();
         loadPosenetModel();
       });
       // await tf.setbackend()
@@ -127,49 +118,119 @@ export default function CameraScreen() {
       });
       // console.log('loadPosenetModel....model', model);
       setModal(model);
-      return model;
+      setLoaded(true);
+      // return model;
     };
 
     const loadBlazefaceModel = async () => {
       const model = await blazeface.load();
       return model;
     };
+
+    // await tf.ready().then((tf) => {
+    //     console.log('tf...', tf)
+    //     if (isMounted) {
+    //         setLoaded(true);
+    //     }
+    // });
+    // (async () => {
+    //   const { status } = await Camera.requestPermissionsAsync();
+    //   setHasPermission(status === 'granted');
+    // })();
   }, []);
+  //   if (hasPermission === null) {
+  //     return <View />;
+  //   }
+  //   if (hasPermission === false) {
+  //     return <Text>No access to camera</Text>;
+  //   }
+  function cosineDistanceMatching(poseVector1, poseVector2) {
+    let cosineSimilarity = similarity(poseVector1, poseVector2);
+    // return cosineSimilarity;
+
+    let distance = 2 * (1 - cosineSimilarity);
+    return Math.sqrt(distance);
+  }
 
   const handleImageTensorReady = (images, updateCameraPreview, gl) => {
     const loop = async () => {
       const modelName = 'posenet';
 
       if (modelName === 'posenet') {
-        if (modal != null) {
+        
           // Load an image as a Uint8Array
-          const imageUri = 'https://en.wikipedia.org/wiki/Waqar_Zaka#/media/File:Waqar_Zaka.jpg';
-          const response = await fetch(imageUri, {}, {isBinary: true});
-          const imageDataArrayBuffer = await response.arrayBuffer();
-          const imageData = new Uint8Array(imageDataArrayBuffer);
+          const imageTensor = images.next().value;
+
+          // const imageUri1 = 'https://image.shutterstock.com/image-photo/full-body-black-man-600w-770647549.jpg';
+          const imageUri1 = simplePose;
+
+          const imageUri2 = 'https://image.shutterstock.com/image-photo/black-man-full-body-600w-624898259.jpg';
+
+          //const response1 = await fetch(imageUri1, {}, {isBinary: true});
+          const response2 = await fetch(imageUri2, {}, {isBinary: true});
+
+          //const imageDataArrayBuffer1 = await response1.arrayBuffer();
+          const imageDataArrayBuffer2 = await response2.arrayBuffer();
+          // console.log('here: ',imageDataArrayBuffer);
+          const imageData1 = new Uint8Array(imageUri1);
+          const imageData2 = new Uint8Array(imageDataArrayBuffer2);
 
           // Decode image data to a tensor
-          const imageTensor = decodeJpeg(imageData);
-          console.log('image tensor: ', imageTensor);
-          
-
-          // const imageTensor = images.next().value;
-          // const flipHorizontal = Platform.OS === 'ios' ? true : true;
-          // const pose = await modal.estimateSinglePose(imageTensor, {
-          //   flipHorizontal,
-          // });
-          // console.log('pose: ', pose);
-          // setSinglePose({pose});
-          // // handleCanvas();
-          // // const context = ctx.getContext('2d');
-
-          // ctx.clearRect(0, 0, CAM_WIDTH, CAM_HEIGHT);
-          // await drawSkeleton(pose);
-          // // setTimeout(() => {
+          const imageTensor1 = decodeJpeg(imageData1);
+          const imageTensor2 = decodeJpeg(imageData2);
+          // console.log('image tensor: ', imageTensor2);
+          const flipHorizontal = Platform.OS === 'ios' ? true : true;
+          const outputStride = 32;
+          if(modal){
+            const pose1 = await modal.estimateSinglePose(imageTensor1, {
+              outputStride,
+              flipHorizontal,
+            });
+            const pose2 = await modal.estimateSinglePose(imageTensor, {
+              outputStride,
+              flipHorizontal,
+            });
+            let poseVector1 = [];
+            let poseVector2 = [];
+            for (const pose of pose1.keypoints){
+              poseVector1.push(pose.position.x);
+              poseVector1.push(pose.position.y);
+              // console.log('position: ', pose.position.x);
+            }
+            for (const pose of pose2.keypoints){
+              poseVector2.push(pose.position.x);
+              poseVector2.push(pose.position.y);
+              // console.log('position: ', pose.position.x);
+            }
+            const distance = cosineDistanceMatching(poseVector1, poseVector2);
+            if(distance <= 0.11) {
+              // console.log('cosine_similarity: ', distance);
+              console.log('--------', distance);
+            }
+            else {
+              // console.log('cosine_similarity: ', distance);
+              console.log('No Match', distance);
+            }
             
-          // // }, 20000);
-          // tf.dispose([imageTensor]);
-        }
+            // console.log('pose vector 2: ', poseVector2);
+
+          }
+
+        //   const imageTensor = images.next().value;
+        //   const flipHorizontal = Platform.OS === 'ios' ? true : true;
+        //   const pose = await modal.estimateSinglePose(imageTensor, {
+        //     flipHorizontal,
+        //   });
+        //   console.log('images: ', pose);
+        //   setSinglePose({pose});
+        //   // handleCanvas();
+        //   // const context = ctx.getContext('2d');
+        //   ctx.clearRect(0, 0, CAM_WIDTH, CAM_HEIGHT);
+
+        //   // await drawSkeleton(pose);
+
+        //   tf.dispose([imageTensor]);
+        
       } else {
         //
       }
@@ -185,6 +246,7 @@ export default function CameraScreen() {
   };
 
   const camView = () => {
+    // console.log('textureDims.height: ', textureDims.width);
     return (
       <TensorCamera
         // Standard Camera props
@@ -194,8 +256,8 @@ export default function CameraScreen() {
         // tensor related props
         cameraTextureHeight={CAM_HEIGHT}
         cameraTextureWidth={CAM_WIDTH}
-        resizeHeight={210}
-        resizeWidth={160}
+        resizeHeight={CAM_HEIGHT}
+        resizeWidth={CAM_WIDTH}
         resizeDepth={3}
         onReady={handleImageTensorReady}
         autorender={false}
@@ -217,6 +279,21 @@ export default function CameraScreen() {
       <View style={styles.camera}>
         {camView()}
         <Canvas ref={handleCanvas} style={styles.canvas} />
+        {/* <Camera style={styles.camera} type={type}>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={() => {
+                  setType(
+                    type === Camera.Constants.Type.back
+                      ? Camera.Constants.Type.front
+                      : Camera.Constants.Type.back
+                  );
+                }}>
+                <Text style={styles.text}> Flip </Text>
+              </TouchableOpacity>
+            </View>
+          </Camera> */}
       </View>
     );
   }
@@ -264,5 +341,5 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 18,
     color: 'white',
-  },
+  }
 });
