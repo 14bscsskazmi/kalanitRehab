@@ -1653,6 +1653,13 @@
   "resolved" "https://registry.npmjs.org/@tensorflow-models/blazeface/-/blazeface-0.0.7.tgz"
   "version" "0.0.7"
 
+"@tensorflow-models/pose-detection@^0.0.6":
+  "integrity" "sha512-L4beHYaHE1UaioHe+Di+xW5TdJIBODaboeEkTYEoMPPsZr0ocjZY0Kqm40csHOhz2SQZ+HOfUYdMw4B2SLWBQw=="
+  "resolved" "https://registry.npmjs.org/@tensorflow-models/pose-detection/-/pose-detection-0.0.6.tgz"
+  "version" "0.0.6"
+  dependencies:
+    "rimraf" "^3.0.2"
+
 "@tensorflow-models/posenet@^2.2.2":
   "integrity" "sha512-0SXIksRet/IdX7WVH+JSD6W3upkGHix1hwtd3xykIoIMGR7zQ4SC5+wZcNt9ofASyxNYQoI+tUULUo4LNw0c3w=="
   "resolved" "https://registry.npmjs.org/@tensorflow-models/posenet/-/posenet-2.2.2.tgz"

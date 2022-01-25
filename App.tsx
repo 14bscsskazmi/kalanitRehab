@@ -8,6 +8,7 @@ import {
   Platform,
   Dimensions,
 } from 'react-native';
+// import * as poseDetection from '@tensorflow-models/pose-detection';
 const similarity = require('compute-cosine-similarity');
 const simplePose = require('./simple-pose.png');
 // import AsyncStorage from '@react-native-community/async-storage';
@@ -20,14 +21,15 @@ import {cameraWithTensors, decodeJpeg, fetch} from '@tensorflow/tfjs-react-nativ
 
 import * as posenet from '@tensorflow-models/posenet';
 import * as blazeface from '@tensorflow-models/blazeface';
+import { PoseDetector } from '@tensorflow-models/pose-detection';
 
 const TensorCamera = cameraWithTensors(Camera);
 
 
 const CAM_WIDTH = Dimensions.get('window').width;
 const CAM_HEIGHT = Dimensions.get('window').height;
-const inputTensorWidth = CAM_WIDTH;
-const inputTensorHeight = 600;
+const inputTensorWidth = 150;
+const inputTensorHeight = 200;
 const AUTORENDER = true;
 
 export default function CameraScreen() {
@@ -48,7 +50,7 @@ export default function CameraScreen() {
   };
   const drawPoint = (x, y) => {
     ctx.beginPath();
-    ctx.arc(x, y, 4, 0, 2 * Math.PI);
+    ctx.arc(x, y, 2, 0, 2 * Math.PI);
     ctx.fillStyle = '#10f400';
     ctx.fill();
     ctx.closePath();
@@ -59,7 +61,7 @@ export default function CameraScreen() {
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 2;
     ctx.strokeStyle = '#00ff30';
     ctx.stroke();
     ctx.closePath();
@@ -67,7 +69,7 @@ export default function CameraScreen() {
 
   const drawSkeleton = pose => {
     console.log(pose);
-    const minPartConfidence = 0.85;
+    const minPartConfidence = 0.8;
     for (var i = 0; i < pose.keypoints.length; i++) {
       const keypoint = pose.keypoints[i];
       if (keypoint.score < minPartConfidence) {
@@ -109,12 +111,13 @@ export default function CameraScreen() {
     })();
 
     const loadPosenetModel = async () => {
+      // const detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER});
       const model = await posenet.load({
-        architecture: 'ResNet50',
-        outputStride: 16,
-        inputResolution: {width: inputTensorWidth, height: inputTensorHeight},
+        architecture: 'MobileNetV1',
+        outputStride: 8,
+        inputResolution: 400,
         multiplier: 1,
-        quantBytes: 2,
+        quantBytes: 4,
       });
       // console.log('loadPosenetModel....model', model);
       setModal(model);
@@ -158,38 +161,41 @@ export default function CameraScreen() {
 
       if (modelName === 'posenet') {
         
-          // Load an image as a Uint8Array
           const imageTensor = images.next().value;
-
-          // const imageUri1 = 'https://image.shutterstock.com/image-photo/full-body-black-man-600w-770647549.jpg';
-          const imageUri1 = simplePose;
-
+          const imageUri1 = 'https://image.shutterstock.com/image-photo/full-body-black-man-600w-770647549.jpg';
+          // const imageUri1 = simplePose;
           const imageUri2 = 'https://image.shutterstock.com/image-photo/black-man-full-body-600w-624898259.jpg';
-
-          //const response1 = await fetch(imageUri1, {}, {isBinary: true});
+          const response1 = await fetch(imageUri1, {}, {isBinary: true});
           const response2 = await fetch(imageUri2, {}, {isBinary: true});
-
-          //const imageDataArrayBuffer1 = await response1.arrayBuffer();
+          
+          const imageDataArrayBuffer1 = await response1.arrayBuffer();
           const imageDataArrayBuffer2 = await response2.arrayBuffer();
-          // console.log('here: ',imageDataArrayBuffer);
-          const imageData1 = new Uint8Array(imageUri1);
+
+          const imageData1 = new Uint8Array(imageDataArrayBuffer1);
           const imageData2 = new Uint8Array(imageDataArrayBuffer2);
 
-          // Decode image data to a tensor
-          const imageTensor1 = decodeJpeg(imageData1);
-          const imageTensor2 = decodeJpeg(imageData2);
+          const imageTensor1 = decodeJpeg(imageData1, 3);
+          const imageTensor2 = decodeJpeg(imageData2, 3);
           // console.log('image tensor: ', imageTensor2);
           const flipHorizontal = Platform.OS === 'ios' ? true : true;
-          const outputStride = 32;
           if(modal){
-            const pose1 = await modal.estimateSinglePose(imageTensor1, {
-              outputStride,
+            const pose1 = await modal.estimateSinglePose(imageTensor, {
+              
               flipHorizontal,
             });
-            const pose2 = await modal.estimateSinglePose(imageTensor, {
-              outputStride,
+            const pose2 = await modal.estimateSinglePose(imageTensor2, {
+              
               flipHorizontal,
             });
+
+            setSinglePose({pose1});
+            // handleCanvas(ctx);
+            // const context = ctx.getContext('2d');
+            ctx.clearRect(0, 0, CAM_WIDTH, CAM_HEIGHT);
+            await drawSkeleton(pose1);
+            // tf.dispose([imageTensor1]);
+            tf.dispose([imageTensor]);
+
             let poseVector1 = [];
             let poseVector2 = [];
             for (const pose of pose1.keypoints){
@@ -205,15 +211,15 @@ export default function CameraScreen() {
             const distance = cosineDistanceMatching(poseVector1, poseVector2);
             if(distance <= 0.11) {
               // console.log('cosine_similarity: ', distance);
-              console.log('--------', distance);
+              //console.log('--------', distance);
             }
             else {
               // console.log('cosine_similarity: ', distance);
-              console.log('No Match', distance);
+              //console.log('No Match', distance);
             }
             
             // console.log('pose vector 2: ', poseVector2);
-
+           
           }
 
         //   const imageTensor = images.next().value;
@@ -232,7 +238,6 @@ export default function CameraScreen() {
         //   tf.dispose([imageTensor]);
         
       } else {
-        //
       }
 
       if (!AUTORENDER) {
@@ -256,8 +261,8 @@ export default function CameraScreen() {
         // tensor related props
         cameraTextureHeight={CAM_HEIGHT}
         cameraTextureWidth={CAM_WIDTH}
-        resizeHeight={CAM_HEIGHT}
-        resizeWidth={CAM_WIDTH}
+        resizeHeight={300}
+        resizeWidth={300 * 0.75}
         resizeDepth={3}
         onReady={handleImageTensorReady}
         autorender={false}
@@ -304,15 +309,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   canvas: {
+     // try flex 1
     width: CAM_WIDTH,
     height: CAM_HEIGHT,
     zIndex: 200,
     borderWidth: 2,
-    // borderColor: 'red',
+    borderColor: 'red',
+    // background
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     position: 'absolute',
     paddingTop: 20,
+    overflow: 'visible',
   },
   cameraContainer: {
     display: 'flex',
@@ -325,7 +333,8 @@ const styles = StyleSheet.create({
   },
   camera: {
     flex: 1,
-    height: CAM_HEIGHT,
+    overflow: 'visible'
+    // height: CAM_HEIGHT,
   },
   buttonContainer: {
     flex: 1,
