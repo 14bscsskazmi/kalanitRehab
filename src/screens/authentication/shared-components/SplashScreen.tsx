@@ -1,39 +1,30 @@
-import React, {FunctionComponent, useEffect} from 'react';
-import {View, Image, ImageBackground} from 'react-native';
-import {SCREEN_WIDTH, SCREEN_HEIGHT} from '../../../constants';
+import React, { FunctionComponent, useEffect } from 'react';
+import { Text, TouchableOpacity, ActivityIndicator, View, Image } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import {SCREEN_WIDTH} from '../../../constants';
 
-import styles from './styles';
+const logo = require('../../../assets/images/logo.png');
+const splashScreen = require('../../../assets/images/splash-screen.png');
 
-const splashScreenLogo = require('../../../assets/images/splash-screen-logo.png');
-const splashScreenBackgroundImage = require('../../../assets/images/splash-screen-background-image.png');
-
-type Props = {
-  navigation: any;
-};
-
-const SplashScreenContainer: FunctionComponent<Props> = function main({
-  navigation,
-}) {
+const SplashScreenContainer: FunctionComponent = ({ navigation }) => {
   // const navigation = useNavigation();
-
+  
   useEffect(() => {
     setTimeout(() => {
       navigation.navigate('WelcomeScreen');
-    }, 2500);
+    },2500);
   });
 
-  return (
-    <View style={styles.main_container}>
-      <ImageBackground
-        source={splashScreenBackgroundImage}
-        style={styles.splash_image_background_styles}
-        imageStyle={{
-          width: SCREEN_WIDTH,
-          height: SCREEN_HEIGHT,
-        }}>
-        <Image source={splashScreenLogo} style={{width: 220, height: 306}} />
-      </ImageBackground>
+  return(
+    <View style={{flex: 1, justifyContent: 'center', backgroundColor: 'white'}}>
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 50}}>
+        <Image source={logo} style={{width: 268, height: 86,}}/>
+      </View>
+      
+      {/* <View style={{flexDirecton: 'row', alignItems: 'flex-end'}}>
+        <Image source={splashScreen} style={{width: '100%', height: 331,}}/>
+      </View> */}
     </View>
-  );
+  )
 };
 export default SplashScreenContainer;

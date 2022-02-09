@@ -303,7 +303,7 @@ export default function CameraScreen() {
   if (!isLoaded) {
     return (
       <View style={styles.container}>
-        <View style={{flexDirection: 'row'}}>
+        <View style={{flexDirection: 'row', flex: 1, alignItems: 'center', justifyContent: 'center'}}>
           <Text style={styles.text}>Loading Tensor Flow</Text>
           <ActivityIndicator />
         </View>
@@ -381,6 +381,6 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 18,
-    color: 'white',
+    color: 'black',
   },
 });
