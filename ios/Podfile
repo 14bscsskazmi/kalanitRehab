@@ -11,6 +11,7 @@ target 'kalanitRehab' do
       expo_patch_react_imports!(installer)
     rescue => e
       Pod::UI.warn e
+
     end
   #   expo_patch_react_imports!(installer)
   # end
