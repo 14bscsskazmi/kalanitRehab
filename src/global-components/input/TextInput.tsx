@@ -17,7 +17,6 @@ type Props = {
   placeholderTextColor?: string;
   RightComponent?: any;
   multiline?: boolean | undefined;
-  inputHeading?: string;
   secureTextEntry?: boolean;
 };
 
@@ -35,7 +34,6 @@ const TextInputComponent: FunctionComponent<Props> =
       placeholderTextColor,
       RightComponent,
       multiline,
-      inputHeading,
       secureTextEntry,
     } = props;
     // const [isOnFocused, setIsOnFocused] = useState<boolean>(false);
@@ -46,17 +44,10 @@ const TextInputComponent: FunctionComponent<Props> =
         activeOpacity={0.9}
         style={[
           styles.input_parent_container,
-          styles.input_parent_shadow,
           {...inputParentStyles},
-        ]}>
+        ]}
+      >
         <View>
-          <Text
-            style={[
-              globalStyles.normal,
-              {color: COLORS.dark_grey, fontWeight: 'bold'},
-            ]}>
-            {inputHeading}
-          </Text>
           <TextInput
             autoCapitalize={autoCapitalize}
             maxLength={maxLength || 10000}
@@ -67,7 +58,7 @@ const TextInputComponent: FunctionComponent<Props> =
                 onChangeText(text);
               }
             }}
-            placeholder={placeholder}
+            placeholder={placeholder || 'User'}
             placeholderTextColor={placeholderTextColor}
             onFocus={() => {
               // console.log('focused');
@@ -80,7 +71,7 @@ const TextInputComponent: FunctionComponent<Props> =
             multiline={multiline || false}
             secureTextEntry={secureTextEntry}
             style={[
-              globalStyles.normal,
+              globalStyles.h3,
               styles.input_container,
               {
                 ...inputStyles,

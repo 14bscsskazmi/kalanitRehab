@@ -1,26 +1,27 @@
 import React, {FunctionComponent} from 'react';
 import {Text, TouchableOpacity, ActivityIndicator} from 'react-native';
 import styles from './styles';
-import globalStyles from '../../global-styles';
+// import globalStyles from '../../global-styles';
 import {COLORS} from '../../constants';
 import {Metadata} from '../../types';
 
 const BUTTON_STYLES = {
-  PRIMARY: {
+  AUTHENTICATION: {
     textStyles: {color: COLORS.white},
     buttonStyles: {
-      backgroundColor: COLORS.light_green,
+      backgroundColor: COLORS.medium_dark_blue,
     },
   },
 
-  // SOCIAL: {
-  //   textStyles: {color: COLORS.blackish_blue},
-  //   buttonStyles: {
-  //     backgroundColor: COLORS.white,
-  //   },
-  // },
+  PRIMARY: {
+    textStyles: {color: COLORS.dark_black},
+    buttonStyles: {
+      backgroundColor: 'rgba(255,255,255, 0.71)',
+    },
+  },
+
   DISABLED: {
-    textStyles: {color: COLORS.white},
+    textStyles: {color: COLORS.dark_black},
     buttonStyles: {
       backgroundColor: 'rgba(0,98,147,0.2)',
       // opacity: 0.2,
@@ -29,20 +30,12 @@ const BUTTON_STYLES = {
   SECONDARY: {
     textStyles: {color: COLORS.white},
     buttonStyles: {
-      backgroundColor: 'transparent',
-    },
-  },
-  TRANSPARENT_WHITE: {
-    textStyles: {color: COLORS.white},
-    buttonStyles: {
-      backgroundColor: 'transparent',
-      borderWidth: 1,
-      borderColor: COLORS.white,
+      backgroundColor: COLORS.dark_black,
     },
   },
 };
 type Props = {
-  buttonType: 'PRIMARY' | 'DISABLED' | 'SECONDARY' | 'TRANSPARENT_WHITE';
+  buttonType: 'PRIMARY' | 'DISABLED' | 'SOCIAL' | 'SECONDARY' | 'AUTHENTICATION';
   buttonText: string;
   disabled?: boolean;
   loading?: boolean;
@@ -50,6 +43,7 @@ type Props = {
   buttonStyles?: Metadata | undefined | any;
   buttonTextStyles?: Metadata | undefined;
   leftComponent?: any;
+  rightComponent?: any;
 };
 
 const SimpleButton: FunctionComponent<Props> = function SimpleButton(props) {
@@ -62,6 +56,7 @@ const SimpleButton: FunctionComponent<Props> = function SimpleButton(props) {
     buttonTextStyles,
     loading,
     leftComponent,
+    right_component,
   } = props;
 
   return (
@@ -71,6 +66,7 @@ const SimpleButton: FunctionComponent<Props> = function SimpleButton(props) {
       disabled={buttonType === 'DISABLED'}
       style={[
         styles.button_container,
+        styles.button_shadow,
         BUTTON_STYLES[buttonType].buttonStyles,
         {...buttonStyles},
       ]}
@@ -82,11 +78,11 @@ const SimpleButton: FunctionComponent<Props> = function SimpleButton(props) {
     >
       {leftComponent || null}
       {loading ? (
-        <ActivityIndicator animating={true} size="large" color={COLORS.white} />
+        <ActivityIndicator animating={true} size="large" color={COLORS.dark_black} />
       ) : (
         <Text
           style={[
-            globalStyles.normal, globalStyles.bold,
+            // globalStyles.regular,
             BUTTON_STYLES[buttonType].textStyles,
             {...buttonTextStyles},
           ]}
@@ -94,6 +90,7 @@ const SimpleButton: FunctionComponent<Props> = function SimpleButton(props) {
           {buttonText}
         </Text>
       )}
+      {right_component || null}
     </TouchableOpacity>
   );
 };

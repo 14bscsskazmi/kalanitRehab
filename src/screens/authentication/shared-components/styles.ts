@@ -1,55 +1,45 @@
 import {StyleSheet, Platform} from 'react-native';
-import {
-  SCREEN_WIDTH,
-  COLORS,
-  STATUS_BAR_HEIGHT,
-  SCREEN_HEIGHT,
-} from '../../../constants';
-import {isIphoneXorAbove} from '../../../helpers';
+import {SCREEN_WIDTH, COLORS, SCREEN_HEIGHT, STATUS_BAR_HEIGHT} from '../../../constants';
 
 const styles = StyleSheet.create({
-  // Splash Screen Styles
-  main_container: {
+  main_view_container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
+    paddingHorizontal: SCREEN_WIDTH * 0.05,
+    paddingBottom: 70
   },
-  splash_image_background_styles: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.dark_black,
+ landing_image_background: {
+  flex: 1,
+  width: SCREEN_WIDTH,
+  height: SCREEN_HEIGHT,
+ },
+ // Signin styles.
+  login_main_container: {
+    flex: 1,
+    alignItems: 'flex-start',
+    paddingTop: Platform.OS === 'ios' ? STATUS_BAR_HEIGHT + 24 : 24,
+    backgroundColor: COLORS.white,
   },
-
-  // Login Screen Styles
-
-  login_image_background_styles: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
+  login_back_icon: {
+    width: 32,
+    height: 32,
+  },
+  login_forgot_view: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    backgroundColor: COLORS.dark_black,
-    paddingTop: Platform.OS === 'ios' ? STATUS_BAR_HEIGHT + 60 : 60,
-    paddingHorizontal: SCREEN_WIDTH * 0.05,
-    paddingBottom: isIphoneXorAbove() ? STATUS_BAR_HEIGHT + 20 : 40,
+    marginTop: 11,
+    paddingRight: 24,
   },
-  login_logo_view: {
-    width: SCREEN_WIDTH * 0.9,
-    alignItems: 'center',
+  // Reset password styles.
+  reset_password_text: {
+    color: COLORS.medium_dark_blue,
+    marginTop: 16,
   },
-  forgot_password: {textAlign: 'right', marginTop: 36},
+  reset_password_details: {
+    color: COLORS.medium_grey,
+    fontWeight: '600',
+    marginTop: 7,
+  }
 
-  // Welcome SCreen Styles
-  welcome_background_image: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
-    // justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    backgroundColor: COLORS.dark_black,
-    paddingTop: Platform.OS === 'ios' ? STATUS_BAR_HEIGHT + 70 : 70,
-    paddingHorizontal: SCREEN_WIDTH * 0.05,
-    paddingBottom: isIphoneXorAbove() ? STATUS_BAR_HEIGHT + 20 : 20,
-  },
 });
 export default styles;
