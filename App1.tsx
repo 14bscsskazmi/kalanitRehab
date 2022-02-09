@@ -170,7 +170,7 @@ export default function CameraScreen() {
 
   const handleImageTensorReady = (images, updateCameraPreview, gl) => {
     const loop = async () => {
-      const modelName = 'coco';
+      const modelName = 'posenet';
       if (modelName === 'posenet') {
         const imageTensor = images.next().value;
         // const imageUri1 =
@@ -254,13 +254,13 @@ export default function CameraScreen() {
 
         const predictions = await modal.detect(imageTensor);
 
-        for (let i = 0; i < predictions.length; i++) {
-          if (predictions[i].class === 'person') {
-            personObjject = predictions[i];
-            break;
-          }
-        }
-        console.log('Person: ', personObjject);
+        // for (let i = 0; i < predictions.length; i++) {
+        //   if (predictions[i].class === 'person') {
+        //     personObjject = predictions[i];
+        //     break;
+        //   }
+        // }
+        // console.log('Person: ', personObjject);
 
         // tf.image.cropAndResize(
         //   imageTensor.reshape([4, 4], [-1]),
